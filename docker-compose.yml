@@ -1,21 +1,27 @@
-version: '3'
+version: '3.9'  # Updated to latest supported version
+
 services:
-  # Application Dockerfile is in same folder which is .
+  # Database service
   db:
     build:
-      context: ./db
+      context: ./db        # Build context is now db/
+      dockerfile: Dockerfile
     ports:
       - "33060:3306"
     restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # Application service
   app:
-    build: .
+    build:
+      context: .           # Build context is repo root for app
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
-
