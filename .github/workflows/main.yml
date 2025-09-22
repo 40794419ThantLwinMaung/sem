@@ -16,3 +16,6 @@ jobs:
         run: mvn package
       - name: Run docker compose
         run: docker compose up --abort-on-container-exit
+      - name: Shutdown docker compose
+        if: always()
+        run: docker compose down
