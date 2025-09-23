@@ -39,7 +39,7 @@ public class App
                 Thread.sleep(3000);
                 // Connect to database
                 con = DriverManager.getConnection(
-                        "\"jdbc:mysql://db:3306/employees?allowPublicKeyRetrieval=true&useSSL=false\"\n",
+                        "jdbc:mysql://db:3306/employees?allowPublicKeyRetrieval=true&useSSL=false",
                         "root",
                         "example"
                 );
