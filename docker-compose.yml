@@ -11,7 +11,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       # Mount the entire test_db folder
-      - ./db/test_db:/docker-entrypoint-initdb.d:ro
+      - ./db/init-sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pexample"]
       interval: 5s
