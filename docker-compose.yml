@@ -10,10 +10,10 @@ services:
       MYSQL_DATABASE: employees
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pexample"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pexample"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
     build: .
