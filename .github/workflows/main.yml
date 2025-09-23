@@ -5,19 +5,6 @@ jobs:
   build:
     name: Hello world action
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: example
-          MYSQL_DATABASE: employees
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -pexample"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
 
     steps:
       - name: Checkout
@@ -35,8 +22,7 @@ jobs:
       - name: Download and load test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
-          cd db/test_db
-          mysql -h 127.0.0.1 -P 3306 -uroot -pexample employees < employees.sql
+          # db will be seeded by docker compose after it starts
 
       - name: Build fat JAR with dependencies
         run: mvn clean compile assembly:single -DskipTests
