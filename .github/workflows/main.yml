@@ -1,9 +1,24 @@
 name: A workflow for my Hello World App
 on: push
+
 jobs:
   build:
     name: Hello world action
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: example
+          MYSQL_DATABASE: employees
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pexample"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,10 +29,18 @@ jobs:
           java-version: '18'
           distribution: 'temurin'
 
-      - name: Download external test_db
+      - name: Install MySQL client
+        run: sudo apt-get install -y mysql-client
+
+      - name: Download and load test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
+          cd db/test_db
+          mysql -h 127.0.0.1 -P 3306 -uroot -pexample employees < employees.sql
+
       - name: Build with Maven
-        run: mvn package
-      - name: Run docker compose
-        run: docker compose up --abort-on-container-exit
+        run: mvn package -DskipTests
+
+      - name: Run the application
+        run: |
+          java -cp target/classes:$(cat target/classpath.tmp 2>/dev/null || echo target/dependency/*) com.napier.sem.App
