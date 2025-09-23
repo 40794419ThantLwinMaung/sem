@@ -1,28 +1,23 @@
-version: '3.9'  # Updated to latest supported version
-
+version: '3'
 services:
-  # Database service
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      # Your app environment variables
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: example
+      DB_NAME: employees
+
   db:
-    build:
-      context: ./db        # Build context is now db/
-      dockerfile: Dockerfile
-    ports:
-      - "33060:3306"
+    image: mysql:8.0
     restart: always
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: example
-      MYSQL_ROOT_HOST: '%'   # Allow root connections from any host
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # Application service
-  app:
-    build:
-      context: .           # Build context is repo root for app
-      dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
+      MYSQL_DATABASE: employees
+    command: --default-authentication-plugin=mysql_native_password
