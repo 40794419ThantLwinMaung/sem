@@ -38,9 +38,8 @@ jobs:
           cd db/test_db
           mysql -h 127.0.0.1 -P 3306 -uroot -pexample employees < employees.sql
 
-      - name: Build with Maven
-        run: mvn package -DskipTests
+      - name: Build fat JAR with dependencies
+        run: mvn clean compile assembly:single -DskipTests
 
-      - name: Run the application
-        run: |
-          java -cp target/classes:$(cat target/classpath.tmp 2>/dev/null || echo target/dependency/*) com.napier.sem.App
+      - name: Run with Docker Compose
+        run: docker compose up --build --abort-on-container-exit
