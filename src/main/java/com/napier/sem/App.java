@@ -91,17 +91,16 @@ public class App
 
             // SQL query to fetch all relevant employee info
             String strSelect =
-                    "SELECT e.emp_no, e.first_name, e.last_name, t.title, s.salary, d.dept_name, " +
-                            "m.first_name AS manager_first, m.last_name AS manager_last " +
-                            "FROM employees e " +
-                            "LEFT JOIN titles t ON e.emp_no = t.emp_no " +
-                            "LEFT JOIN salaries s ON e.emp_no = s.emp_no " +
-                            "LEFT JOIN dept_emp de ON e.emp_no = de.emp_no " +
-                            "LEFT JOIN departments d ON de.dept_no = d.dept_no " +
-                            "LEFT JOIN dept_manager dm ON de.dept_no = dm.dept_no " +
-                            "LEFT JOIN employees m ON dm.emp_no = m.emp_no " +
-                            "WHERE e.emp_no = " + ID + " " +
-                            "ORDER BY s.to_date DESC LIMIT 1;";
+                    "SELECT e.emp_no, e.first_name, e.last_name, t.title, s.salary, d.dept_name, m.first_name AS manager_first, m.last_name AS manager_last "
+                            + "FROM employees e "
+                            + "LEFT JOIN titles t ON e.emp_no = t.emp_no "
+                            + "LEFT JOIN salaries s ON e.emp_no = s.emp_no "
+                            + "LEFT JOIN dept_emp de ON e.emp_no = de.emp_no "
+                            + "LEFT JOIN departments d ON de.dept_no = d.dept_no "
+                            + "LEFT JOIN dept_manager dm ON de.dept_no = dm.dept_no "
+                            + "LEFT JOIN employees m ON dm.emp_no = m.emp_no "
+                            + "WHERE e.emp_no = " + ID + " "
+                            + "ORDER BY s.to_date DESC LIMIT 1;";
 
             // Execute SQL statement
             ResultSet rset = stmt.executeQuery(strSelect);
@@ -117,8 +116,7 @@ public class App
                 emp.dept_name = rset.getString("dept_name");
                 String managerFirst = rset.getString("manager_first");
                 String managerLast = rset.getString("manager_last");
-                emp.manager = (managerFirst != null && managerLast != null)
-                        ? managerFirst + " " + managerLast : "N/A";
+                emp.manager = (managerFirst != null && managerLast != null) ? managerFirst + " " + managerLast : "N/A";
                 return emp;
             }
             else
@@ -132,51 +130,6 @@ public class App
             System.out.println(e.getMessage());
             System.out.println("Failed to get employee details");
             return null;
-        }
-    }
-
-    /**
-     * Get employees by title from the database.
-     * @param title The title of the employees to retrieve.
-     */
-    public void getEmployeesByTitle(String title)
-    {
-        try
-        {
-            // Create an SQL statement
-            Statement stmt = con.createStatement();
-
-            // SQL query to fetch all employees by title
-            String strSelect =
-                    "SELECT employees.emp_no, employees.first_name, employees.last_name, salaries.salary " +
-                            "FROM employees, salaries, titles " +
-                            "WHERE employees.emp_no = salaries.emp_no " +
-                            "AND employees.emp_no = titles.emp_no " +
-                            "AND salaries.to_date = '9999-01-01' " +
-                            "AND titles.to_date = '9999-01-01' " +
-                            "AND titles.title = '" + title + "' " +
-                            "ORDER BY employees.emp_no ASC;";
-
-            // Execute SQL statement
-            ResultSet rset = stmt.executeQuery(strSelect);
-
-            // Display employee information
-            System.out.println("Employees with title: " + title);
-            while (rset.next())
-            {
-                int emp_no = rset.getInt("emp_no");
-                String firstName = rset.getString("first_name");
-                String lastName = rset.getString("last_name");
-                int salary = rset.getInt("salary");
-
-                System.out.println("Employee No: " + emp_no +
-                        " | Name: " + firstName + " " + lastName +
-                        " | Salary: " + salary);
-            }
-        }
-        catch (Exception e)
-        {
-            System.out.println("Error retrieving employees by title: " + e.getMessage());
         }
     }
 
@@ -210,14 +163,11 @@ public class App
         // Connect to database
         a.connect();
 
-        // Get one employee (replace 255530 with any valid emp_no in your DB)
+        // Get employee (replace 255530 with any valid emp_no in your DB)
         Employee emp = a.getEmployee(255530);
 
-        // Display employee details
+        // Display results
         a.displayEmployee(emp);
-
-        // Get all employees by title "Engineer"
-        a.getEmployeesByTitle("Engineer");
 
         // Disconnect from database
         a.disconnect();

@@ -1,12 +1,31 @@
-version: '3'
+version: '3.9'
 services:
-  # Application Dockerfile is in same folder which is .
-  app:
-    build: .
-
-  # db is is db folder
   db:
-    build: db/.
+    image: mysql:8.0
     restart: always
     ports:
-      - "33060:3306"
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: employees
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      # Mount the entire test_db folder
+      - ./db/init-sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pexample"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: example
+      DB_NAME: employees
