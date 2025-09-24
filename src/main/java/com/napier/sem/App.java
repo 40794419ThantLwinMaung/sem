@@ -38,7 +38,11 @@ public class App
                 // Wait a bit for db to start
                 Thread.sleep(30000);
                 // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/employees?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://db:3306/employees?allowPublicKeyRetrieval=true&useSSL=false",
+                        "root",
+                        "example"
+                );
                 System.out.println("Successfully connected");
                 break;
             }
@@ -152,6 +156,49 @@ public class App
         }
     }
 
+    /**
+     * Get salary information by role.
+     * @param title The job title to look up salaries for.
+     */
+    public void getSalariesByRole(String title)
+    {
+        try
+        {
+            // Create an SQL statement
+            Statement stmt = con.createStatement();
+
+            // SQL query to fetch employee salaries by role
+            String strSelect =
+                    "SELECT e.emp_no, e.first_name, e.last_name, s.salary "
+                            + "FROM employees e, salaries s, titles t "
+                            + "WHERE e.emp_no = s.emp_no "
+                            + "AND e.emp_no = t.emp_no "
+                            + "AND s.to_date = '9999-01-01' "
+                            + "AND t.to_date = '9999-01-01' "
+                            + "AND t.title = '" + title + "' "
+                            + "ORDER BY e.emp_no ASC;";
+
+            // Execute SQL statement
+            ResultSet rset = stmt.executeQuery(strSelect);
+
+            System.out.println("Salaries for role: " + title);
+            while (rset.next())
+            {
+                // Output the emp_no, first_name, last_name, and salary
+                System.out.printf("%-8d%-15s%-15s%-8d\n",
+                        rset.getInt("emp_no"),
+                        rset.getString("first_name"),
+                        rset.getString("last_name"),
+                        rset.getInt("salary"));
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            System.out.println("Failed to get salaries by role");
+        }
+    }
+
     public static void main(String[] args)
     {
         App a = new App();
@@ -164,6 +211,9 @@ public class App
 
         // Display results
         a.displayEmployee(emp);
+
+        // Get salaries for a specific role (replace 'Engineer' with the role you want)
+        a.getSalariesByRole("Engineer");
 
         // Disconnect from database
         a.disconnect();
