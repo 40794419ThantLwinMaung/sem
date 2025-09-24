@@ -4,28 +4,21 @@ on: push
 jobs:
   build:
     name: Hello world action
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up JDK 18
         uses: actions/setup-java@v4
         with:
           java-version: '18'
-          distribution: 'temurin'
+          distribution: 'temurin'   # adopt is deprecated, Temurin is recommended
 
-      - name: Install MySQL client
-        run: sudo apt-get install -y mysql-client
+      - name: Build with Maven
+        run: mvn package
 
-      - name: Download and load test_db
-        run: |
-          git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
-          # db will be seeded by docker compose after it starts
-
-      - name: Build fat JAR with dependencies
-        run: mvn clean compile assembly:single -DskipTests
-
-      - name: Run with Docker Compose
-        run: docker compose up --build --abort-on-container-exit
+      - name: Run docker compose
+        run: docker compose up --abort-on-container-exit
