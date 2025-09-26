@@ -30,6 +30,8 @@ public class Employee
      */
     public int salary;
 
+    public Department dept;
+
     /**
      * Employee's current department
      */
@@ -38,5 +40,5 @@ public class Employee
     /**
      * Employee's manager
      */
-    public String manager;
+    public Employee manager;
 }

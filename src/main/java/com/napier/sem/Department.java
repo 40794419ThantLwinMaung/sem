@@ -18,5 +18,5 @@ public class Department
     /**
      * Department manager (name as String for now, can later be changed to Employee)
      */
-    public String manager;
+    public Employee manager;
 }
