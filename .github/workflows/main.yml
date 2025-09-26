@@ -1,86 +1,80 @@
-name: Hello World App Workflow
+name: A workflow for my Hello World App
 on:
-  push
+  push:
+    branches:
+      - master
+      - lab08
 
 jobs:
   UnitTests:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Unit Tests
+        run: mvn -Dtest=com.napier.devops.AppTest test
+
+  IntegrationTests:
+    name: Integration Tests
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Set up JDK 18
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
-          java-version: '18'
-          distribution: 'temurin'
+          java-version: '11'
+          distribution: 'adopt'
 
-      - name: Remove existing test_db directory (if any)
-        run: |
-          rm -rf db/test_db
-
+      # Step to clone the test DB repo if needed
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
 
-      - name: Run Unit Tests
-        run: mvn -Dtest=com.napier.sem.AppTest test
+      # Step to run docker-compose (MySQL container will be up)
+      - name: Run MySQL container with Docker Compose
+        run: |
+          docker-compose -f docker-compose.yml up -d
+          
+          # Ensure MySQL container allows remote connections (via Docker)
+          docker exec -it $(docker ps -q -f "name=mysql") bash -c "echo 'bind-address = 0.0.0.0' >> /etc/mysql/my.cnf"
+          docker exec -it $(docker ps -q -f "name=mysql") bash -c "service mysql restart"
 
-  IntegrationTests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
+      # Step to run integration tests
+      - name: Integration Tests
+        run: |
+          mvn -Dtest=com.napier.devops.AppIntegrationTest test
+
+      # Clean up after tests (stop the container)
+      - name: Clean up Docker containers
+        run: |
+          docker-compose down
+
+  build:
+    name: Build and Start Using docker-compose
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Set up JDK 18
-        uses: actions/setup-java@v4
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          java-version: '18'
-          distribution: 'temurin'
-
-      - name: Build Database Docker Image
-        run: |
-          docker build -t database ./db
-
-      - name: Run Database Docker Container
-        run: |
-          docker run --name employees -dp 33060:3306 database
-
-      - name: Run Integration Tests
-        run: |
-          mvn -Dtest=com.napier.sem.AppIntegrationTest test
-
-      - name: Stop and Remove Docker Container
-        run: |
-          docker stop employees
-          docker rm employees
-
-      - name: Remove Docker Image
-        run: |
-          docker image rm database
-
-  Build:
-    name: Build and Start Using Docker Compose
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up JDK 18
-        uses: actions/setup-java@v4
-        with:
-          java-version: '18'
-          distribution: 'temurin'
-
-      - name: Package and Run Docker Compose
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Package and Run docker compose
         run: |
           mvn package -DskipTests
           docker compose up --abort-on-container-exit
