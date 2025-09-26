@@ -17,6 +17,10 @@ jobs:
           java-version: '18'
           distribution: 'temurin'
 
+      - name: Remove existing test_db directory (if any)
+        run: |
+          rm -rf db/test_db
+
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
