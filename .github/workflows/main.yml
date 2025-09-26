@@ -39,14 +39,15 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
 
-      - name: Integration Tests
+      - name: Run Integration Tests
         run: |
           docker build -t database ./db 
-          docker run --name employees -dp 33060:3306 database
+          docker run --name employees -dp 33060:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_HOST=0.0.0.0 database
           mvn -Dtest=com.napier.sem.AppIntegrationTest test
           docker stop employees
           docker rm employees
-          docker image rm database                    
+          docker image rm database
+                  
 
   Build:
     name: Build and Start Using docker-compose
