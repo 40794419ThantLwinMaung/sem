@@ -41,14 +41,17 @@ jobs:
 
       - name: Integration Tests
         run: |
-          mvn package -DskipTests
-          # Build and run the database container
-          docker build -t database ./db 
-          docker run --name employees -dp 33060:3306 database
+          # Start the database container with init script to allow external connections
+          docker build -t database ./db
+          docker run --name employees -v $(pwd)/db/init.sql:/docker-entrypoint-initdb.d/init.sql -e MYSQL_ROOT_PASSWORD=example -dp 33060:3306 database
+
+          # Run your integration tests
           mvn -Dtest=com.napier.sem.AppIntegrationTest test
+
+          # Stop and clean up
           docker stop employees
           docker rm employees
-          docker image rm database                    
+          docker image rm database               
 
   Build:
     name: Build and Start Using docker-compose
