@@ -67,7 +67,7 @@ jobs:
           verbose: true
 
   BuildAndRelease:
-    name: Build, Start docker-compose, and Deploy Release
+    name: Build, Start docker-compose, Deploy Release, and Copy Reports
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -87,12 +87,20 @@ jobs:
           mvn package -DskipTests
           docker compose up --abort-on-container-exit
 
+      - name: Copy Output Reports from Docker Container
+        run: docker container cp devops_employees_app_1:./tmp/reports ./reports
+
+      - name: Deploy Reports to GitHub Branch
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: reports    # Branch to deploy reports to
+          folder: reports    # Folder to deploy
+
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.PAT_TOKEN }}  # Use your PAT here
           prerelease: false
-          automatic_release_tag: latest      # This will overwrite the "latest" release
+          automatic_release_tag: latest        # This overwrites the "latest" release
           files: |
             ./target/*.jar
-          overwrite: true                   # Add this to force overwrite

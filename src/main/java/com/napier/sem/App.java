@@ -7,6 +7,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class App
 {
     private Connection con = null;
@@ -239,36 +244,59 @@ public class App
     }
 
     // Get salaries by role
-    public void getSalariesByRole(String title)
-    {
-        try
-        {
+    public ArrayList<Employee> getSalariesByRole(String title) {
+        ArrayList<Employee> employees = new ArrayList<>();
+        try {
             Statement stmt = con.createStatement();
             String strSelect =
-                    "SELECT e.emp_no, e.first_name, e.last_name, s.salary " +
-                            "FROM employees e, salaries s, titles t " +
-                            "WHERE e.emp_no = s.emp_no AND e.emp_no = t.emp_no " +
-                            "AND s.to_date = '9999-01-01' AND t.to_date = '9999-01-01' " +
-                            "AND t.title = '" + title + "' " +
+                    "SELECT e.emp_no, e.first_name, e.last_name, t.title, s.salary, d.dept_name, dm.emp_no AS manager_no, m.first_name AS manager_first, m.last_name AS manager_last " +
+                            "FROM employees e " +
+                            "JOIN titles t ON e.emp_no = t.emp_no " +
+                            "JOIN salaries s ON e.emp_no = s.emp_no " +
+                            "JOIN dept_emp de ON e.emp_no = de.emp_no " +
+                            "JOIN departments d ON de.dept_no = d.dept_no " +
+                            "JOIN dept_manager dm ON d.dept_no = dm.dept_no " +
+                            "LEFT JOIN employees m ON dm.emp_no = m.emp_no " +
+                            "WHERE s.to_date = '9999-01-01' AND t.to_date = '9999-01-01' AND t.title = '" + title + "' " +
                             "ORDER BY e.emp_no ASC;";
+
             ResultSet rset = stmt.executeQuery(strSelect);
 
-            System.out.println("Salaries for role: " + title);
-            while (rset.next())
-            {
-                System.out.printf("%-8d%-15s%-15s%-8d\n",
-                        rset.getInt("emp_no"),
-                        rset.getString("first_name"),
-                        rset.getString("last_name"),
-                        rset.getInt("salary"));
+            while (rset.next()) {
+                Employee emp = new Employee();
+                emp.emp_no = rset.getInt("emp_no");
+                emp.first_name = rset.getString("first_name");
+                emp.last_name = rset.getString("last_name");
+                emp.title = rset.getString("title");
+                emp.salary = rset.getInt("salary");
+                emp.dept_name = rset.getString("dept_name");
+
+                Employee mgr = null;
+                String managerFirst = rset.getString("manager_first");
+                String managerLast = rset.getString("manager_last");
+                if (managerFirst != null && managerLast != null) {
+                    mgr = new Employee();
+                    mgr.emp_no = rset.getInt("manager_no");
+                    mgr.first_name = managerFirst;
+                    mgr.last_name = managerLast;
+                }
+
+                emp.manager = mgr;
+
+                Department dept = new Department();
+                dept.dept_name = rset.getString("dept_name");
+                dept.manager = mgr;
+                emp.dept = dept;
+
+                employees.add(emp);
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             System.out.println("Failed to get salaries by role");
         }
+        return employees;
     }
+
 
     // Get salaries by department
     public ArrayList<Employee> getSalariesByDepartment(Department dept)
@@ -366,25 +394,70 @@ public class App
             System.out.println("Failed to add employee");
         }
     }
-
-    public static void main(String[] args) {
-        // Create new Application and connect to database
-        App a = new App();
-
-        if(args.length < 1){
-            a.connect("localhost:33060", 30000);
-        }else{
-            a.connect(args[0], Integer.parseInt(args[1]));
+    public void outputEmployees(ArrayList<Employee> employees, String filename) {
+        if (employees == null || employees.isEmpty()) {
+            System.out.println("No employees to output");
+            return;
         }
 
-        Department dept = a.getDepartment("Development");
-        ArrayList<Employee> employees = a.getSalariesByDepartment(dept);
+        StringBuilder sb = new StringBuilder();
 
+        // Markdown table header
+        sb.append("| Emp No | First Name | Last Name | Title | Salary | Department | Manager |\n");
+        sb.append("| --- | --- | --- | --- | --- | --- | --- |\n");
 
-        // Print salary report
-        a.printSalaries(employees);
+        // Loop over employees and append rows
+        for (Employee emp : employees) {
+            if (emp == null) continue;
+
+            String managerName = (emp.manager != null) ? emp.manager.first_name + " " + emp.manager.last_name : "N/A";
+
+            sb.append("| ")
+                    .append(emp.emp_no).append(" | ")
+                    .append(emp.first_name).append(" | ")
+                    .append(emp.last_name).append(" | ")
+                    .append(emp.title).append(" | ")
+                    .append(emp.salary).append(" | ")
+                    .append(emp.dept_name).append(" | ")
+                    .append(managerName)
+                    .append(" |\n");
+        }
+
+        // Create reports directory if it doesn't exist
+        try {
+            File dir = new File("./reports");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dir, filename)));
+            writer.write(sb.toString());
+            writer.close();
+            System.out.println("Report generated: ./reports/" + filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Failed to write report");
+        }
+    }
+    public static void main(String[] args) {
+        // Create new Application and connect to database
+        App app = new App();
+
+        if (args.length < 1) {
+            app.connect("localhost:33060", 30000);
+        } else {
+            app.connect(args[0], Integer.parseInt(args[1]));
+        }
+
+        // Example: Get salaries by role 'Manager' and output to markdown
+        ArrayList<Employee> employees = app.getSalariesByRole("Manager");
+        app.outputEmployees(employees, "ManagerSalaries.md");
+
+        // Optionally, you can still print to console
+        app.printSalaries(employees);
 
         // Disconnect from database
-        a.disconnect();
+        app.disconnect();
     }
+
 }
