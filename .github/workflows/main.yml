@@ -18,6 +18,7 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
+
       - name: Run Unit Tests
         run: mvn -Dtest=com.napier.sem.AppTest test
 
@@ -37,17 +38,16 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
+
       - name: Integration Tests
         run: |
-          # Start the database container with init script to allow external connections
-          docker build -t database ./db
-          docker run --name employees -v $(pwd)/db/init.sql:/docker-entrypoint-initdb.d/init.sql -e MYSQL_ROOT_PASSWORD=example -dp 33060:3306 database
-          # Run your integration tests
+          docker build -t database ./db 
+          docker run --name employees -dp 33060:3306 database
           mvn -Dtest=com.napier.sem.AppIntegrationTest test
-          # Stop and clean up
           docker stop employees
           docker rm employees
-          docker image rm database
+          docker image rm database                    
+
   Build:
     name: Build and Start Using docker-compose
     runs-on: ubuntu-latest
@@ -65,6 +65,7 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
+
       - name: Package and Run docker-compose
         run: |
           mvn package -DskipTests
