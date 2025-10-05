@@ -90,8 +90,9 @@ jobs:
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.PAT_TOKEN }}  # Use your PAT here
           prerelease: false
-          automatic_release_tag: "latest"
+          automatic_release_tag: latest      # This will overwrite the "latest" release
           files: |
             ./target/*.jar
+          overwrite: true                   # Add this to force overwrite
