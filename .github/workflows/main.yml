@@ -53,13 +53,13 @@ jobs:
           docker rm employees
           docker image rm database
 
-      - name: CodeCov
+      - name: Codecov
         uses: codecov/codecov-action@v2
         with:
-          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          directory: ./target/site/jacoco
-          flags: Integration Tests # optional
-          verbose: true # optional (default = false)
+          files: target/site/jacoco/jacoco.xml   # explicitly the XML report
+          flags: Integration Tests               # optional
+          verbose: true                          # optional
+
 
   Build:
       name: Build and Start Using docker-compose
