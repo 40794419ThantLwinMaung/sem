@@ -93,7 +93,7 @@ jobs:
           # Get the container ID for the service named 'app' in docker-compose
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          docker cp $CONTAINER_ID:/reports ./reports
+          docker cp $CONTAINER_ID:/app/reports ./reports
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.2.5
