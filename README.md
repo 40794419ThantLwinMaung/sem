@@ -16,3 +16,6 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/40794419ThantLwinMaung/sem/main.yml?branch=develop&style=flat-square)
 *Current status of the development branch workflow.*
+
+---
+[![codecov](https://codecov.io/gh/40794419ThantLwinMaung/sem/graph/badge.svg?token=K75QJNGGXT)](https://codecov.io/gh/40794419ThantLwinMaung/sem)
