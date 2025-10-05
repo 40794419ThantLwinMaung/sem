@@ -86,20 +86,21 @@ jobs:
         run: |
           mvn package -DskipTests
           docker compose up -d
-          sleep 10
+          echo "Waiting for app to generate reports..."
+          sleep 10  # Adjust if needed for report generation
 
       - name: Copy Output
         run: |
-          # Get the container ID for the service named 'app' in docker-compose
+          mkdir -p reports
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          docker cp $CONTAINER_ID:/app/reports ./reports
+          docker cp $CONTAINER_ID:/reports ./reports
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
-          branch: reports # The branch the action should deploy to.
-          folder: reports # The folder we are copying
+          branch: reports   # The branch to deploy reports to
+          folder: reports   # The folder to deploy
 
       - name: Stop and Remove docker-compose
         run: docker compose down
