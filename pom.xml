@@ -15,7 +15,6 @@
         <maven.compiler.release>18</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Versions centralized -->
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <surefire.version>3.2.5</surefire.version>
         <jacoco.version>0.8.12</jacoco.version>
@@ -85,27 +84,27 @@
                 <version>${surefire.version}</version>
                 <configuration>
                     <useModulePath>false</useModulePath>
-                    <forkCount>1</forkCount>
-                    <reuseForks>true</reuseForks>
-                    <argLine>-Xmx1024m</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
 
-            <!-- Fixed JaCoCo plugin with XML and HTML reports -->
+            <!-- JaCoCo plugin -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
+                    <!-- Prepare agent automatically for tests -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+
+                    <!-- Generate XML + HTML report -->
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
@@ -113,10 +112,9 @@
                             <goal>report</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
                             <formats>
-                                <format>xml</format>
-                                <format>html</format>
+                                <format>XML</format>
+                                <format>HTML</format>
                             </formats>
                         </configuration>
                     </execution>
