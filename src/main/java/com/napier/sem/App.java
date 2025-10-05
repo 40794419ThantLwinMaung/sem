@@ -7,9 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-/**
- * Main application class for managing employee and department data.
- */
 public class App
 {
     private Connection con = null;
