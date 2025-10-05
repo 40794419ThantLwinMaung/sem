@@ -88,25 +88,17 @@ jobs:
           docker compose up -d
           sleep 10  # Wait for containers to start and generate reports
 
-      - name: Inspect container file structure
+      - name: Ensure reports directory exists
         run: |
-          CONTAINER_ID=$(docker compose ps -q app)
-          echo "Inspecting container $CONTAINER_ID for reports directory"
-          docker exec $CONTAINER_ID ls -al /      # List root directory
-          docker exec $CONTAINER_ID ls -al /tmp  # Check /tmp if reports are stored there
-          docker exec $CONTAINER_ID ls -al /var  # Check /var for possible report storage
-          docker exec $CONTAINER_ID ls -al /app  # Ensure no path issues for /app directory
+          mkdir -p reports  # Ensure reports folder exists before copying from the container
 
-      - name: Copy Output
+      - name: Copy Output Reports from Docker Container
         run: |
-          # Get the container ID for the service named 'app' in docker-compose
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-
-          # Try different paths based on inspection from the previous step
-          docker cp $CONTAINER_ID:/app/reports ./reports || \
-          docker cp $CONTAINER_ID:/tmp/reports ./reports || \
-          docker cp $CONTAINER_ID:/var/reports ./reports
+          
+          # Copy reports from container
+          docker cp $CONTAINER_ID:/app/reports ./reports
 
       - name: Stop and Remove docker-compose
         run: |
