@@ -18,7 +18,6 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
-
       - name: Run Unit Tests
         run: mvn -Dtest=com.napier.sem.AppTest test
 
@@ -38,36 +37,24 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
-
       - name: Integration Tests
         run: |
           # Start the database container with init script to allow external connections
           docker build -t database ./db
           docker run --name employees -v $(pwd)/db/init.sql:/docker-entrypoint-initdb.d/init.sql -e MYSQL_ROOT_PASSWORD=example -dp 33060:3306 database
-
           # Run your integration tests
           mvn -Dtest=com.napier.sem.AppIntegrationTest test
-
           # Stop and clean up
           docker stop employees
           docker rm employees
           docker image rm database
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          #token: ${{ secrets.CODECOV_TOKEN }} # required if private repo
-          directory: ./target/site/jacoco
-          flags: IntegrationTests
-          verbose: true
-
-
   Build:
     name: Build and Start Using docker-compose
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
 
       - name: Set up JDK 18
         uses: actions/setup-java@v4
@@ -78,7 +65,6 @@ jobs:
       - name: Download external test_db
         run: |
           git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
-
       - name: Package and Run docker-compose
         run: |
           mvn package -DskipTests
