@@ -52,9 +52,16 @@ jobs:
           docker stop employees
           docker rm employees
           docker image rm database
-  
 
-  Build:
+      - name: CodeCov
+        uses: codecov/codecov-action@v4
+        with:
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./target/site/jacoco/jacoco.xml
+          flags: IntegrationTests
+          verbose: true
+
+Build:
     name: Build and Start Using docker-compose
     runs-on: ubuntu-latest
     steps:
