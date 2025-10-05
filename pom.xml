@@ -94,7 +94,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Updated JaCoCo plugin -->
+            <!-- Fixed JaCoCo plugin with XML and HTML reports -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -112,6 +112,13 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                            <formats>
+                                <format>xml</format>
+                                <format>html</format>
+                            </formats>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
