@@ -85,15 +85,18 @@ jobs:
       - name: Package and Run docker-compose
         run: |
           mvn package -DskipTests
-          docker compose up --abort-on-container-exit
+          docker compose up -d    # start in detached mode
+          sleep 10                # give time for app to generate report
 
       - name: Copy Output Reports from Docker Container
         run: |
-          # Get the container ID of the running container
-          CONTAINER_ID=$(docker ps -aqf "name=employees")
+          CONTAINER_ID=$(docker ps -qf "name=app")  # match your service name
           echo "Copying reports from container $CONTAINER_ID"
           docker cp $CONTAINER_ID:/app/reports ./reports
 
+      - name: Stop and Remove docker-compose
+        run: |
+          docker compose down
 
       - name: Deploy Reports to GitHub Branch
         uses: JamesIves/github-pages-deploy-action@v4.2.5
