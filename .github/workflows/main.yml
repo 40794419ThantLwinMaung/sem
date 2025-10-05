@@ -82,33 +82,32 @@ jobs:
       - name: Download external test_db
         run: git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
 
-      - name: Package and Run docker-compose
+      - name: Package and Start docker-compose
         run: |
           mvn package -DskipTests
-          docker compose up -d    # start in detached mode
-          sleep 10                # give time for app to generate report
+          docker compose up -d
+          sleep 10
 
-      - name: Copy Output Reports from Docker Container
+      - name: Copy Output
         run: |
-          CONTAINER_ID=$(docker ps -qf "name=app")  # match your service name
+          # Get the container ID for the service named 'app' in docker-compose
+          CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          docker cp $CONTAINER_ID:/app/reports ./reports
+          docker cp $CONTAINER_ID:/reports ./reports
 
-      - name: Stop and Remove docker-compose
-        run: |
-          docker compose down
-
-      - name: Deploy Reports to GitHub Branch
+      - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
-          branch: reports    # Branch to deploy reports to
-          folder: reports    # Folder to deploy
+          branch: reports # The branch the action should deploy to.
+          folder: reports # The folder we are copying
+
+      - name: Stop and Remove docker-compose
+        run: docker compose down
 
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.PAT_TOKEN }}  # Use your PAT here
+          repo_token: ${{ secrets.PAT_TOKEN }}
           prerelease: false
-          automatic_release_tag: latest        # This overwrites the "latest" release
-          files: |
-            ./target/*.jar
+          automatic_release_tag: latest
+          files: ./target/*.jar
