@@ -88,6 +88,15 @@ jobs:
           docker compose up -d
           sleep 10  # Wait for containers to start and generate reports
 
+      - name: Inspect container file structure
+        run: |
+          CONTAINER_ID=$(docker compose ps -q app)
+          echo "Inspecting container $CONTAINER_ID"
+          docker exec $CONTAINER_ID ls -al /  # List root directory
+          docker exec $CONTAINER_ID ls -al /tmp  # Check /tmp if reports are stored there
+          docker exec $CONTAINER_ID ls -al /var  # Check /var for possible report storage
+          docker exec $CONTAINER_ID ls -al /app  # Check if reports are there
+
       - name: Ensure reports directory exists
         run: |
           mkdir -p reports  # Ensure reports folder exists before copying from the container
@@ -96,9 +105,11 @@ jobs:
         run: |
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          
-          # Copy reports from container
-          docker cp $CONTAINER_ID:/app/reports ./reports
+
+          # Try copying from multiple locations based on previous inspection
+          docker cp $CONTAINER_ID:/app/reports ./reports || \
+          docker cp $CONTAINER_ID:/tmp/reports ./reports || \
+          docker cp $CONTAINER_ID:/var/reports ./reports
 
       - name: Stop and Remove docker-compose
         run: |
@@ -117,3 +128,4 @@ jobs:
           prerelease: false
           automatic_release_tag: latest
           files: ./target/*.jar
+
