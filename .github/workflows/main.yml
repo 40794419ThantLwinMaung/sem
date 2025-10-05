@@ -86,21 +86,33 @@ jobs:
         run: |
           mvn package -DskipTests
           docker compose up -d
-          echo "Waiting for app to generate reports..."
-          sleep 10  # Adjust if needed for report generation
+          sleep 10
+
+      - name: List files in the container to find reports
+        run: |
+          CONTAINER_ID=$(docker compose ps -q app)
+          echo "Inspecting container $CONTAINER_ID"
+          docker exec $CONTAINER_ID ls -al /  # List root directory
+          docker exec $CONTAINER_ID ls -al /app  # Check the /app directory
+
+      - name: Get container logs for debugging
+        run: |
+          CONTAINER_ID=$(docker compose ps -q app)
+          echo "Getting logs for container $CONTAINER_ID"
+          docker logs $CONTAINER_ID  # Get the logs of the app container
 
       - name: Copy Output
         run: |
           mkdir -p reports
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          docker cp $CONTAINER_ID:/reports ./reports
+          docker cp $CONTAINER_ID:/app/reports ./reports  # Adjust path if needed
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
-          branch: reports   # The branch to deploy reports to
-          folder: reports   # The folder to deploy
+          branch: reports # The branch the action should deploy to.
+          folder: reports # The folder we are copying
 
       - name: Stop and Remove docker-compose
         run: docker compose down
@@ -112,3 +124,4 @@ jobs:
           prerelease: false
           automatic_release_tag: latest
           files: ./target/*.jar
+
