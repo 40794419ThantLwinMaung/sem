@@ -86,42 +86,42 @@ jobs:
         run: |
           mvn package -DskipTests
           docker compose up -d
-          sleep 10
+          sleep 10  # Wait for containers to start and generate reports
 
-      - name: List files in the container to find reports
+      - name: Inspect container file structure
         run: |
           CONTAINER_ID=$(docker compose ps -q app)
-          echo "Inspecting container $CONTAINER_ID"
-          docker exec $CONTAINER_ID ls -al /  # List root directory
-          docker exec $CONTAINER_ID ls -al /app  # Check the /app directory
-
-      - name: Get container logs for debugging
-        run: |
-          CONTAINER_ID=$(docker compose ps -q app)
-          echo "Getting logs for container $CONTAINER_ID"
-          docker logs $CONTAINER_ID  # Get the logs of the app container
+          echo "Inspecting container $CONTAINER_ID for reports directory"
+          docker exec $CONTAINER_ID ls -al /      # List root directory
+          docker exec $CONTAINER_ID ls -al /tmp  # Check /tmp if reports are stored there
+          docker exec $CONTAINER_ID ls -al /var  # Check /var for possible report storage
+          docker exec $CONTAINER_ID ls -al /app  # Ensure no path issues for /app directory
 
       - name: Copy Output
         run: |
-          mkdir -p reports
+          # Get the container ID for the service named 'app' in docker-compose
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
-          docker cp $CONTAINER_ID:/app/reports ./reports  # Adjust path if needed
 
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.2.5
-        with:
-          branch: reports # The branch the action should deploy to.
-          folder: reports # The folder we are copying
+          # Try different paths based on inspection from the previous step
+          docker cp $CONTAINER_ID:/app/reports ./reports || \
+          docker cp $CONTAINER_ID:/tmp/reports ./reports || \
+          docker cp $CONTAINER_ID:/var/reports ./reports
 
       - name: Stop and Remove docker-compose
-        run: docker compose down
+        run: |
+          docker compose down
+
+      - name: Deploy Reports to GitHub Branch
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: reports    # Branch to deploy reports to
+          folder: reports    # Folder to deploy
 
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.PAT_TOKEN }}
+          repo_token: ${{ secrets.PAT_TOKEN }}  # Use your PAT here
           prerelease: false
           automatic_release_tag: latest
           files: ./target/*.jar
-
