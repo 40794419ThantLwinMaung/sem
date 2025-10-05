@@ -70,57 +70,67 @@ jobs:
     name: Build, Start docker-compose, Deploy Release, and Copy Reports
     runs-on: ubuntu-latest
     steps:
+      # Checkout the code from the repo
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Set up JDK 18
       - name: Set up JDK 18
         uses: actions/setup-java@v4
         with:
           java-version: '18'
           distribution: 'temurin'
 
+      # Download external test_db
       - name: Download external test_db
         run: git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
 
+      # Package and Start Docker Compose
       - name: Package and Start docker-compose
         run: |
           mvn package -DskipTests
           docker compose up -d
           sleep 10  # Wait for containers to start and generate reports
 
+      # Search for the report file inside the container
+      - name: Search for report files in container
+        run: |
+          CONTAINER_ID=$(docker compose ps -q app)
+          echo "Searching for ManagerSalaries.md or similar report files"
+          docker exec $CONTAINER_ID find / -name "ManagerSalaries.md" || echo "Report not found in container."
+
+      # Inspect container for report directory (if search doesn't work)
       - name: Inspect container file structure
         run: |
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Inspecting container $CONTAINER_ID"
-          docker exec $CONTAINER_ID ls -al /  # List root directory
+          docker exec $CONTAINER_ID ls -al /      # List root directory
           docker exec $CONTAINER_ID ls -al /tmp  # Check /tmp if reports are stored there
           docker exec $CONTAINER_ID ls -al /var  # Check /var for possible report storage
           docker exec $CONTAINER_ID ls -al /app  # Check if reports are there
 
-      - name: Ensure reports directory exists
-        run: |
-          mkdir -p reports  # Ensure reports folder exists before copying from the container
-
+      # Copy Output Reports from Docker Container
       - name: Copy Output Reports from Docker Container
         run: |
           CONTAINER_ID=$(docker compose ps -q app)
           echo "Copying reports from container $CONTAINER_ID"
+          
+          # Update this path with the correct directory found in the previous steps
+          docker cp $CONTAINER_ID:/path/to/reports ./reports || echo "Reports directory not found."
 
-          # Try copying from multiple locations based on previous inspection
-          docker cp $CONTAINER_ID:/app/reports ./reports || \
-          docker cp $CONTAINER_ID:/tmp/reports ./reports || \
-          docker cp $CONTAINER_ID:/var/reports ./reports
-
+      # Stop and Remove Docker Compose
       - name: Stop and Remove docker-compose
         run: |
           docker compose down
 
+      # Deploy Reports to GitHub Branch
       - name: Deploy Reports to GitHub Branch
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
           branch: reports    # Branch to deploy reports to
           folder: reports    # Folder to deploy
 
+      # Deploy JAR to GitHub Releases
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
