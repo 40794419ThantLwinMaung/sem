@@ -107,3 +107,5 @@ jobs:
         with:
           branch: reports
           folder: reports
+          token: ${{ secrets.DEPLOY_PAT }}
+
