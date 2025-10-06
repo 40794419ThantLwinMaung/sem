@@ -1,4 +1,5 @@
 name: Hello World App Workflow
+
 on:
   push:
     branches:
@@ -26,7 +27,7 @@ jobs:
         run: mvn -Dtest=com.napier.sem.AppTest test
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: target/site/jacoco/jacoco.xml
@@ -52,14 +53,16 @@ jobs:
       - name: Integration Tests
         run: |
           docker build -t database ./db
-          docker run --name employees -v ${{ github.workspace }}/db/init.sql:/docker-entrypoint-initdb.d/init.sql -e MYSQL_ROOT_PASSWORD=example -dp 33060:3306 database
+          docker run --name employees \
+            -v ${{ github.workspace }}/db/init.sql:/docker-entrypoint-initdb.d/init.sql \
+            -e MYSQL_ROOT_PASSWORD=example -dp 33060:3306 database
           mvn -Dtest=com.napier.sem.AppIntegrationTest verify
           docker stop employees
           docker rm employees
           docker image rm database
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: target/site/jacoco/jacoco.xml
@@ -67,75 +70,40 @@ jobs:
           verbose: true
 
   BuildAndRelease:
-    name: Build, Start docker-compose, Deploy Release, and Copy Reports
+    name: Build, Start docker-compose, and Deploy Release
     runs-on: ubuntu-latest
     steps:
-      # Checkout the code from the repo
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Set up JDK 18
       - name: Set up JDK 18
         uses: actions/setup-java@v4
         with:
           java-version: '18'
           distribution: 'temurin'
 
-      # Download external test_db
       - name: Download external test_db
         run: git clone --depth 1 https://github.com/datacharmer/test_db.git db/test_db
 
-      # Package and Start Docker Compose
-      - name: Package and Start docker-compose
+      - name: Package and Run docker-compose
         run: |
           mvn package -DskipTests
-          docker compose up -d
-          sleep 10  # Wait for containers to start and generate reports
+          docker compose up --abort-on-container-exit
 
-      # Search for the report file inside the container
-      - name: Search for report files in container
-        run: |
-          CONTAINER_ID=$(docker compose ps -q app)
-          echo "Searching for ManagerSalaries.md or similar report files"
-          docker exec $CONTAINER_ID find / -name "ManagerSalaries.md" || echo "Report not found in container."
-
-      # Inspect container for report directory (if search doesn't work)
-      - name: Inspect container file structure
-        run: |
-          CONTAINER_ID=$(docker compose ps -q app)
-          echo "Inspecting container $CONTAINER_ID"
-          docker exec $CONTAINER_ID ls -al /      # List root directory
-          docker exec $CONTAINER_ID ls -al /tmp  # Check /tmp if reports are stored there
-          docker exec $CONTAINER_ID ls -al /var  # Check /var for possible report storage
-          docker exec $CONTAINER_ID ls -al /app  # Check if reports are there
-
-      # Copy Output Reports from Docker Container
-      - name: Copy Output Reports from Docker Container
-        run: |
-          CONTAINER_ID=$(docker compose ps -q app)
-          echo "Copying reports from container $CONTAINER_ID"
-          
-          # Update this path with the correct directory found in the previous steps
-          docker cp $CONTAINER_ID:/path/to/reports ./reports || echo "Reports directory not found."
-
-      # Stop and Remove Docker Compose
-      - name: Stop and Remove docker-compose
-        run: |
-          docker compose down
-
-      # Deploy Reports to GitHub Branch
-      - name: Deploy Reports to GitHub Branch
-        uses: JamesIves/github-pages-deploy-action@v4.2.5
-        with:
-          branch: reports    # Branch to deploy reports to
-          folder: reports    # Folder to deploy
-
-      # Deploy JAR to GitHub Releases
       - name: Deploy JAR to GitHub Releases
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.PAT_TOKEN }}  # Use your PAT here
+          repo_token: ${{ secrets.PAT_TOKEN }}
           prerelease: false
           automatic_release_tag: latest
           files: ./target/*.jar
+          overwrite: true
 
+      - name: Copy Output
+        run: docker cp sem-app-1:/tmp/reports ./reports
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: reports
+          folder: reports
